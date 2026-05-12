@@ -2,9 +2,13 @@ const express = require("express");
 require("dotenv").config();
 const app = express();
 const PORT = process.env.PORT;
+const cors = require("cors");
 
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = process.env.DB_URI;
+
+app.use(cors());
+app.use(express.json());
 
 const client = new MongoClient(uri, {
   serverApi: {
@@ -17,6 +21,24 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     await client.connect();
+
+    const db = client.db("wanderlust-db");
+    const destinationCollection = db.collection("destination");
+
+    app.get("/destination", async (req, res) => {
+      const result = await destinationCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.get("/destination/:id", async (req, res) => {
+      const { id } = req.params;
+
+      const result = await destinationCollection.findOne({
+        _id: new ObjectId(id),
+      });
+      res.send(result);
+      console.log(result);
+    });
 
     await client.db("admin").command({ ping: 1 });
     console.log(
